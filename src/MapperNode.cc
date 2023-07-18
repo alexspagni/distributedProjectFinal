@@ -25,7 +25,8 @@ private:
     int n=0;
     OperationMessage *msgArrived;
     ShuffleMessage *shuffleMessage;
-    OperationMessage *messageSaved=NULL;
+    OperationMessage *messageSaved=nullptr;
+
 protected:
     // The following redefined virtual function holds the algorithm.
     virtual void initialize() override;
@@ -66,7 +67,7 @@ void MapperNode::handleMessage(cMessage *msg)
         {
             EV << "I'm able to perform the required, the number generated is "<<random <<"\n";
             if(messageSaved!=nullptr){
-                char buffer[10];
+                char buffer[11];
                 EV <<"Operation to perform: " << messageSaved->getOperationToDo() << " ,partition to read: " << messageSaved->getPartitionToRead() << ",node to be sent: " << messageSaved->getNodeToSend() << "\n";
                 const char *messageComplete = messageSaved->getOperationToDo();
                 strncpy(buffer, messageComplete, sizeof(buffer) - 1);
@@ -74,7 +75,7 @@ void MapperNode::handleMessage(cMessage *msg)
                 const char *operationType = strtok(buffer, " ");
                 const char *operationToPerform = strtok(NULL, " ");
                 int modifierValue = strtol(strtok(NULL, " "), NULL, 10);
-
+                EV<<modifierValue<<"\n";
                 if (opp_strcmp(operationType, "map") == 0)
                 {
                     mapOperation(messageSaved, operationToPerform, modifierValue);
@@ -162,7 +163,7 @@ void MapperNode::mapOperation(OperationMessage *msg, const char *operationToPerf
     char buffer[bufferLength];
     int arrayKey[100] = {[0 ... 99] = -1};
     int arrayValue[100] = {[0 ... 99] = -1};
-
+    //EV<<modifierValue<<"\n";
     filePointer = fopen(msg->getPartitionToRead(), "r+");
     int indexKey = 0, indexValue = 0;
     while (fgets(buffer, bufferLength, filePointer))
