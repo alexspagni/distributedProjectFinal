@@ -9,9 +9,11 @@
 #include <omnetpp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstdlib> // Per la funzione malloc
 #include <time.h>
 #include "OperationMessage_m.h"
 #include "ackMessage_m.h"
+
 #include "backOnline_m.h"
 #include "shuffle_m.h"
 using namespace omnetpp;
@@ -25,19 +27,21 @@ private:
     int n=0;
     OperationMessage *msgArrived;
     ShuffleMessage *shuffleMessage;
+    int probabilityOfFailure;
     OperationMessage *messageSaved=nullptr;
-
+ int numOfMessages;
 protected:
     // The following redefined virtual function holds the algorithm.
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
     void createPartitions(char absolutePath[100]);
-    int checkLettersDrawn(char letterUsed[], char caracterDrawn);
+
     virtual void mapOperation(OperationMessage *msg, const char *operationToPerform, int modifierValue);
     void writeOnFile(int *arrayKey, int *arrayValue, OperationMessage *msg);
     void ackMessageFunction(OperationMessage *msg);
     void changeKeyOperation(OperationMessage *msg, const char *operationToPerform, int modifierValue);
     void generateTimeout();
+    void finish();
 };
 
 // The module class needs to be registered with OMNeT++
@@ -45,17 +49,28 @@ Define_Module(MapperNode);
 
 void MapperNode::initialize()
 {
+
+    numOfMessages=0;
+    WATCH(numOfMessages);
     timeout = 10.0;
     timeoutEvent = new cMessage("timeoutEvent");
     backOnlineMessage = new cMessage("backOnline");
-    //scheduleAt(simTime()+timeout, timeoutEvent);
-    //scheduleAt(simTime() + timeout, timeoutEvent);
+    probabilityOfFailure=par("probabilityOfFailure");
 
 }
 
 
+void MapperNode::finish()
+{
+
+    EV << "Message sent or received by mapper "<<getIndex()<<" is " << numOfMessages << endl;
+recordScalar("#sent", numOfMessages);
+
+
+}
 void MapperNode::handleMessage(cMessage *msg)
 {
+
     if (msg == timeoutEvent)
     {
         EV<<"I received a timeout message and i'm node "<<getIndex() <<"\n";
@@ -63,8 +78,11 @@ void MapperNode::handleMessage(cMessage *msg)
         int random = rand() % 100;
 
         // il nodo decide se fallire o meno
-        if (random >20 )
+        if (random >probabilityOfFailure )
         {
+            numOfMessages+=1;
+
+
             EV << "I'm able to perform the required, the number generated is "<<random <<"\n";
             if(messageSaved!=nullptr){
                 char buffer[11];
@@ -75,7 +93,7 @@ void MapperNode::handleMessage(cMessage *msg)
                 const char *operationType = strtok(buffer, " ");
                 const char *operationToPerform = strtok(NULL, " ");
                 int modifierValue = strtol(strtok(NULL, " "), NULL, 10);
-                EV<<modifierValue<<"\n";
+               // EV<<modifierValue<<"\n";
                 if (opp_strcmp(operationType, "map") == 0)
                 {
                     mapOperation(messageSaved, operationToPerform, modifierValue);
@@ -93,7 +111,9 @@ void MapperNode::handleMessage(cMessage *msg)
         }
         else {// nel caso in cui il nodo fallisca deve generare un messaggio di back online message in modo da poter ritornare "alive"
             EV <<" I'm mapper: " << getIndex()<<" and i failed "<<"\n";
-          //  delete msg;
+
+
+
             timeout = 15.0;
             scheduleAt(simTime() + timeout, backOnlineMessage);
 
@@ -103,16 +123,16 @@ void MapperNode::handleMessage(cMessage *msg)
     else{
        // EV<<"sono qui\n";
         // controllo se il messaggio arrivato è di tipo operation message
-
+        numOfMessages+=1;
         msgArrived = dynamic_cast<OperationMessage *>(msg);
         if (msgArrived!=nullptr){
             EV<<"I received a message of type OperationMessage"<<"\n";
-                  messageSaved=check_and_cast<OperationMessage *>(msg);
-                  EV << "I'm node " << getIndex() << " ,operation:" << messageSaved->getOperationToDo() << " ,partition:" << messageSaved->getPartitionToRead() << " ,node to be sent: " << messageSaved->getNodeToSend() << "\n";
+            messageSaved=check_and_cast<OperationMessage *>(msg);
+            EV << "I'm node " << getIndex() << " ,operation:" << messageSaved->getOperationToDo() << " ,partition:" << messageSaved->getPartitionToRead() << " ,node to be sent: " << messageSaved->getNodeToSend() << "\n";
 
-                // cancelEvent(timeoutEvent);
-                 timeout = 1.0;
-                 scheduleAt(simTime() + timeout, timeoutEvent);
+        // cancelEvent(timeoutEvent);
+           timeout = 1.0;
+           scheduleAt(simTime() + timeout, timeoutEvent);
         }
 
         else {
@@ -121,6 +141,7 @@ void MapperNode::handleMessage(cMessage *msg)
             backOnline *backOnlineMessage= new backOnline("backOnlineMessage");
             backOnlineMessage->setNodeNumber(getIndex());
             send(backOnlineMessage,"out");
+            numOfMessages+=1;
         }
 
     }
@@ -153,17 +174,25 @@ void MapperNode::ackMessageFunction(OperationMessage *msg)
     msgToSend->setPerformed(true);
     msgToSend -> setPartition(msg ->getPartitionToRead());
     EV << msgToSend->getNodeNumber() <<" "<< msgToSend->getPerformed() << " "<< msgToSend->getPartition();
+    numOfMessages++;
     send(msgToSend, "out");
 }
 
 void MapperNode::mapOperation(OperationMessage *msg, const char *operationToPerform, int modifierValue)
 {
+    int maxSize=100;
+    int currentSize=0;
     FILE *filePointer;
     const int bufferLength = 255, numberKeyValue = 2;
     char buffer[bufferLength];
-    int arrayKey[100] = {[0 ... 99] = -1};
-    int arrayValue[100] = {[0 ... 99] = -1};
+    int *arrayKey=(int *)malloc(maxSize*sizeof(int));
+   //int arrayKey[100] = {[0 ... 99] = -1};
+    int *arrayValue=(int *)malloc(maxSize*sizeof(int));
     //EV<<modifierValue<<"\n";
+    for (int i=0;i<maxSize;i++){
+        arrayKey[i]=-1;
+        arrayValue[i]=-1;
+    }
     filePointer = fopen(msg->getPartitionToRead(), "r+");
     int indexKey = 0, indexValue = 0;
     while (fgets(buffer, bufferLength, filePointer))
@@ -172,8 +201,14 @@ void MapperNode::mapOperation(OperationMessage *msg, const char *operationToPerf
         char *token = strtok(buffer, " ");
         // loop through the string to extract all other tokens
         int i = 0;
+        if (maxSize==currentSize){
+            maxSize=maxSize*2;
+            arrayKey=(int *)realloc(arrayKey, maxSize*sizeof(int));
+            arrayValue=(int *)realloc(arrayValue, maxSize*sizeof(int));
+        }
         while (i < numberKeyValue)
         {
+
             if (i == 0)
             {
                 arrayKey[indexKey] = strtol(token, NULL, 10);
@@ -211,6 +246,7 @@ void MapperNode::mapOperation(OperationMessage *msg, const char *operationToPerf
 
             i++;
         }
+        currentSize++;
     }
     fclose(filePointer);
 
@@ -222,12 +258,18 @@ void MapperNode::mapOperation(OperationMessage *msg, const char *operationToPerf
 void MapperNode::changeKeyOperation(OperationMessage *msg, const char *operationToPerform, int modifierKey)
 {
 
+    int maxSize=100;
+    int currentSize=0;
     FILE *filePointer;
     const int bufferLength = 255, numberKeyValue = 2;
     char buffer[bufferLength];
-    int arrayKey[100] = {[0 ... 99] = -1};
-    int arrayValue[100] = {[0 ... 99] = -1};
-
+    int *arrayKey=(int *)malloc(maxSize*sizeof(int));
+   //int arrayKey[100] = {[0 ... 99] = -1};
+    int *arrayValue=(int *)malloc(maxSize*sizeof(int));
+    for (int i=0;i<maxSize;i++){
+           arrayKey[i]=-1;
+           arrayValue[i]=-1;
+       }
     filePointer = fopen(msg->getPartitionToRead(), "r+");
     int indexKey = 0, indexValue = 0;
     while (fgets(buffer, bufferLength, filePointer))
@@ -236,7 +278,11 @@ void MapperNode::changeKeyOperation(OperationMessage *msg, const char *operation
         char *token = strtok(buffer, " ");
 
         int i = 0;
-
+        if (maxSize==currentSize){
+            maxSize=maxSize*2;
+            arrayKey=(int *)realloc(arrayKey, maxSize*sizeof(int));
+            arrayValue=(int *)realloc(arrayValue, maxSize*sizeof(int));
+        }
         while (i < numberKeyValue)
         {
             if (i == 0)
@@ -281,6 +327,7 @@ void MapperNode::changeKeyOperation(OperationMessage *msg, const char *operation
 
             i++;
         }
+        currentSize++;
     }
     fclose(filePointer);
 

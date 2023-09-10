@@ -20,14 +20,19 @@
 simple Coordinator
 {
     parameters:
-        int n = default(7);
-        int numberOfShuffler=default(5);
+     //   int numberOfWorkers = default(7);
+        int numberOfShuffler=default(1);
+        int numberOfReducers=default(10);
+        int keyValuePairs=default(2);
+        double totalExecutionTime @unit("s") = default(0s);
+        int totalNumberOfMessagesCoordinator=default(0);
+        int numberOfWorkers= default(10);
     gates:
         input in[]; //mapIn
         output out[]; //mapOut
         input inRedux[];
-        output outShuf[];
-        input inShuffler[];
+        output outShuf;
+        input inShuffler;
 }
 
 
@@ -35,6 +40,7 @@ simple MapperNode
 {
     parameters:
         int n = default(7);
+        int probabilityOfFailure=default(20);
     gates:
 
         input in; //mapIn
@@ -44,63 +50,79 @@ simple MapperNode
 simple Shuffler
 {
     parameters:
-        int n = default(7);
-        int numberOfShuffler=default(5);
+        //int n = default(7);
+        int numOfShuffler=default(1);
+        int numOfReducer=default(10);
     gates:
 
-        input in; //mapIn
-        output out[]; //mapOut
-         output outCoordinator;
+        input in; //in coordinator
+        output out[]; //out coordinator
+         output outCoordinator;// out Coordinator
 }
 
 simple Reducer
 {
     parameters:
-        int n = default(7);
+       // int n = default(7);
+        int probabilityOfFailure=default(20);
     gates:
 
-        input in[]; //mapIn
-        output out; //mapOut
+        input in; //shuffler in
+        output out; //out Coordinator
 }
 
 
 network DistributedProject2
 {
     parameters:
-        int n = default(7);
+        int numberOfWorkers;
+        int numberOfShuffler;
+        int numberOfReducer;
+        double executionTimeShufflerReducer @unit(ms);
+        double executionTimeCoordinatorOtherComponent @unit(ms);
 		
         @display("bgb=429,164");
     submodules:
-        Map[n]: MapperNode {
+        Map[numberOfWorkers]: MapperNode {
             @display("p=51,76");
         }
         Cor: Coordinator {
             @display("p=244,101");
         }
-        Shuf[n]: Shuffler {
+        Shuf: Shuffler {
             @display("p=301.56,26.04");
         }
-        redux[n]: Reducer {
+        redux[numberOfReducer]: Reducer {
             @display("p=339.36002,115.08");
         }
     connections:
 
-        for i=0..n-1 {
+        for i=0..numberOfWorkers-1 {
             //collegamenti tra coordinator e mapper
-            Cor.out++ --> {  delay = 1000ms; } --> Map[i].in;
-            Map[i].out --> {  delay = 1000ms; } --> Cor.in++;
-            //collgamenti da reducer a corrdinator
-            redux[i].out --> {  delay = 1000ms; } --> Cor.inRedux++;
-            //collegamenti da coordinator a shuffler
-            Cor.outShuf++ --> {  delay = 1000ms; } --> Shuf[i].in;
-            //Collegamenti da shuffler ad ogni reducer
-            Shuf[i].out++--> {  delay = 10ms; }--> redux[0].in++ ;
-            Shuf[i].out++--> {  delay = 10ms; }--> redux[1].in++ ;
-            Shuf[i].out++--> {  delay = 10ms; }--> redux[2].in++ ;
-            Shuf[i].out++--> {  delay = 10ms; }--> redux[3].in++ ;
-            Shuf[i].out++--> {  delay = 10ms; }--> redux[4].in++ ;
-            Shuf[i].outCoordinator--> {  delay = 10ms; }--> Cor.in++ ;
+            Cor.out++ --> {  delay = parent.executionTimeCoordinatorOtherComponent; } --> Map[i].in;
+            Map[i].out --> {  delay = parent.executionTimeCoordinatorOtherComponent; } --> Cor.in++;
+           
         }
+       
+            Cor.outShuf --> {  delay = parent.executionTimeCoordinatorOtherComponent; } --> Shuf.in;
+            Shuf.outCoordinator--> {  delay = parent.executionTimeShufflerReducer; }--> Cor.inShuffler ;
+            
         
+        for i=0..numberOfReducer-1 {
+         
+            //collgamenti da reducer a corrdinator
+            redux[i].out --> {  delay = parent.executionTimeCoordinatorOtherComponent; } --> Cor.inRedux++;
+            
+        }
+       
+         for i=0..numberOfReducer-1 {
+         
+             //Collegamenti da shuffler ad ogni reducer
+            Shuf.out++--> {  delay = parent.executionTimeShufflerReducer; }--> redux[i].in ;
+
+
+            
+            
+        }
     
 }

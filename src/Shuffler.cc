@@ -27,15 +27,13 @@ private:
     cMessage *timeoutEvent;
     cMessage *timeoutEventReducers;
     cMessage *backOnlineMessage;
-    int numOfReducers=5;
+    int numOfReducers;
     OperationMessage *msgArrived;
     ShuffleMessage *shuffleMessage;
     OperationMessage *messageSaved=NULL;
-    int arrayKey[100] = {[0 ... 99] = -1};
-    int arrayValue[100] = {[0 ... 99] = -1};
     cQueue messageQueue;
     //int numOfPartiotions=10;
-    int numOfShuffler=5;
+    int numOfShuffler;
     int totalNumberOfPartitions=10;// partizioni nel momento in cui divido in chunk
     int *arrayOfPartitions=nullptr;
     int *arrayOfReducers=nullptr;
@@ -44,31 +42,21 @@ protected:
     // The following redefined virtual function holds the algorithm.
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
-    void getDataFromFile(ShuffleMessage *msg);
     void shufflingOperation(ShuffleMessage *msg);
-    void addKeyValuepair(int *arrayKey, int *arrayValue);
-    void prepareMessage(ShuffleMessage *msg);
-    void sendMessage(int *arrayKey, int reducerToSend, int key,ShuffleMessage *msg);
     int checkReducerAvailable(ShuffleMessage *msg);
-    int findClosestReducerAvailable(int reducerToSend,ShuffleMessage *msg);
     void printArrayOfReducers(ShuffleMessage *msg);
     void printArrayOfPartitions(ShuffleMessage *msg);
-    void printKeyValuePairExtracted();
-    void resetArray(int *array);
     void riarrangeKey(ShuffleMessage *msg);
-    void ackMessageCoordinator();
     void sendDataReducer();
-    int findReducerToSendData(int index,int count);
     void scheduleTimeout();
     void scheduleTimeoutForReducers();
-    int countPartitionsToElaborate(int index);
     void initializeArrayOfPartitions(ShuffleMessage *msg);
     void initializeArrayOfReducers(ShuffleMessage *msg);
     int numOfPartionsRemainedToElaborate();
-    int findPartitionToElaborate(int index,int count);
     void initializeArrayOfNamePartitions();
     void sendMessageReducer(int reducerNumber, std::string partitionToElaborate);
     void sendMessageCoordinator(int reducerNumber, std::string partitionToElaborate);
+    int  findReducer(int lastReducerFound);
 };
 
 // The module class needs to be registered with OMNeT++
@@ -76,13 +64,17 @@ Define_Module(Shuffler);
 
 void Shuffler::initialize()
 {
+    numOfReducers=par("numOfReducer");
+    numOfShuffler=par("numOfShuffler");
     timeout = 1.0;
     timeoutEvent = new cMessage("timeoutEvent");
     timeoutEventReducers = new cMessage("timeoutEventReducers");
     arrayOfPartitions = (int *)malloc(10 * sizeof(int));//ten because i can group the numbers in 10 partitions
     arrayOfReducers = (int *)malloc(numOfReducers * sizeof(int));
+
     initializeArrayOfNamePartitions();
 }
+// Used to inizialize chunks of data that need to be read or created
 void Shuffler::initializeArrayOfNamePartitions(){
            partitionsNames.insert(partitionsNames.begin(), "C:\\Users\\spagn\\Desktop\\prova\\reduceFileOfKeys0.txt");
            partitionsNames.insert(partitionsNames.begin()+1, "C:\\Users\\spagn\\Desktop\\prova\\reduceFileOfKeys1.txt");
@@ -117,21 +109,21 @@ void Shuffler::initializeArrayOfReducers(ShuffleMessage *msg){
 
 void Shuffler::handleMessage(cMessage *msg)
 {
-  //  EV<<"sono qui";
+
 
     ShuffleMessage *shuffleMessage = dynamic_cast<ShuffleMessage *>(msg);
     if (shuffleMessage!=nullptr){
-      //  totalNumberOfPartitions=shuffleMessage->getPartitionElaboratedArraySize();
+
         initializeArrayOfPartitions(shuffleMessage);
         initializeArrayOfReducers(shuffleMessage);
-    //    EV<<"sono qui 2";
+
         EV<<"I received a message of type Shuffle Message"<<"\n";
-        EV << "i'm shuffler: " << getIndex() << " ,Operation to perform: " << shuffleMessage->getOperationToDo() << " ,partition to work: " << shuffleMessage->getPartitionToRead() << ",node to be sent: " << shuffleMessage->getNodeToSend() << "\n";
+        EV << "i'm shuffler: " << " ,Operation to perform: " << shuffleMessage->getOperationToDo() << " ,partition to work: " << shuffleMessage->getPartitionToRead() << ",node to be sent: " << shuffleMessage->getNodeToSend() << "\n";
        messageQueue.insert(shuffleMessage);
        printArrayOfReducers(shuffleMessage);
        printArrayOfPartitions(shuffleMessage);
        scheduleTimeout();
-     //  shufflingOperation(shuffleMessage);
+
     }
     if (msg == timeoutEvent)
        {
@@ -139,10 +131,12 @@ void Shuffler::handleMessage(cMessage *msg)
             ShuffleMessage *message = dynamic_cast<ShuffleMessage *>(messageQueue.pop());
                                    if (message != nullptr) {
                                       if (message->getCreatePartition()){
+
                                           shufflingOperation(message);
                                           scheduleTimeoutForReducers();
                                       }
                                       else{
+
                                           scheduleTimeoutForReducers();
                                       }
 
@@ -162,9 +156,9 @@ void Shuffler::scheduleTimeout() {
         // Controlla se è già stato programmato un messaggio di timeout
         if (timeoutEvent && !timeoutEvent->isScheduled()) {
             // Programmazione del messaggio di timeout
-           // simtime_t timeout = simTime() + 1.0;  // Esempio di timeout dopo 5 secondi
+
             scheduleAt(simTime() + timeout, timeoutEvent);
-           // EV << "Messaggio di timeout programmato per " << timeout << endl;
+
         }
     }
 void Shuffler::scheduleTimeoutForReducers() {
@@ -178,9 +172,11 @@ void Shuffler::scheduleTimeoutForReducers() {
     }
 void Shuffler::printArrayOfReducers(ShuffleMessage *msg)
 {
-EV<<"List of reducers available"<<"\n";
+EV<<"List of reducers available, 1=Available -1=Unavailable"<<"\n";
 for (int i=0;i<msg->getReducerAvailableArraySize();i++){
+    if(msg->getReducerAvailable(i)!=0){
     EV<<"Reducer "<<i<< " "<<msg->getReducerAvailable(i)<<"\n ";
+    }
 }
 //EV<<"\n";
 }
@@ -192,57 +188,14 @@ for (int i=0;i<msg->getPartitionElaboratedArraySize();i++){
 }
 //EV<<"\n";
 }
-void Shuffler::printKeyValuePairExtracted()
-{
 
-for (int i=0;i<100;i++){
-    if (arrayKey[i]!=-1){
-        EV<<"key "<<arrayKey[i]<<" ";
-           EV<<"value "<<arrayValue[i]<<"\n ";
-    }
-
-
-}
-
-}
 void Shuffler::shufflingOperation(ShuffleMessage *msg){
 
-   EV << "Message arrived i'm shuffler: " << getIndex() << " ,Operation: " << msg->getOperationToDo() << " ,partition: " << msg->getPartitionToRead() << ",node to be sent:: " << msg->getNodeToSend() << "\n";
-    //printArrayOfReducers(msg);
+   EV << "Message arrived i'm the shuffler: " << " ,Operation: " << msg->getOperationToDo() << " ,partition: " << msg->getPartitionToRead() << ",node to be sent:: " << msg->getNodeToSend() << "\n";
     riarrangeKey(msg);
-    /*getDataFromFile(msg);
-    printKeyValuePairExtracted();
-    prepareMessage(msg);
-*/
 
 }
-int Shuffler::findReducerToSendData(int index,int count){
-    int indexReducerFound=-1;
-    while((index+count)>=0){
-        if (indexReducerFound<numOfReducers-1){
-            for(int i=indexReducerFound+1;i<numOfReducers;i++){
-                if (arrayOfReducers[i]==1){
-                    indexReducerFound=i;
-                    index=index-1;
-                    break;
-                }
-            }
-        }
-        else{
-            indexReducerFound=0;
-            for(int i=indexReducerFound;i<numOfReducers;i++){
-                if (arrayOfReducers[i]==1){
-                    indexReducerFound=i;
-                    index=index-1;
-                    break;
-                }
-        }
 
-    }
-
-}
-    return indexReducerFound;
-}
 // per trovare il numero di partizioni rimanenti da elaborare
 int Shuffler::numOfPartionsRemainedToElaborate(){
     int count=0;
@@ -253,76 +206,70 @@ int Shuffler::numOfPartionsRemainedToElaborate(){
    }
    return count;
 }
-//guardo quante partizioni questo shuffler dovrà elaborare, cioè dovrà gestire sulla base di quelle che sono già state elaborate
-int Shuffler::countPartitionsToElaborate(int index){
-    int remainedPartitions=numOfPartionsRemainedToElaborate();
-    int num=remainedPartitions/numOfShuffler;
 
-    if (num*numOfShuffler==remainedPartitions){// se le partizioni rimaste da elaborare sono pari al numero di shuffler allora sono aposto
-        return num;
-    }
-    else{// Se le partizioni rimaste da elaborare sono maggiori del numero di shuffler allora qualche shuffler dovrà gestire più di una partizione
-        if((index+1+num*numOfShuffler)<=remainedPartitions){
-            return num+1;
-        }
-        else{
-            return num;
+int Shuffler::findReducer(int lastReducerFound){
+int reducerFound=-1;
+    if (lastReducerFound<numOfReducers){
+        for (int i=lastReducerFound;i<numOfReducers;i++){
+            if (arrayOfReducers[i]==1){
+                reducerFound=i;
+                break;
+            }
         }
     }
+    else{
+        for (int i=0;i<numOfReducers;i++){
+           if (arrayOfReducers[i]==1){
+               reducerFound=i;
+               break;
+           }
+       }
 
-}
-int Shuffler::findPartitionToElaborate(int index,int count){
-
-    int partitionFound=-1;
-    int cicles=0;
-    for (int i=0;i<getIndex();i++){
-        cicles=cicles+countPartitionsToElaborate(i);
     }
-       while((cicles+count)>0){
-           if (partitionFound<totalNumberOfPartitions){
-               for(int i=partitionFound+1;i<totalNumberOfPartitions;i++){
-                   if (arrayOfPartitions[i]==-2){
-                       partitionFound=i;
-                       cicles=cicles-1;
+    if (reducerFound==-1){
+        for (int i=0;i<numOfReducers;i++){
+                   if (arrayOfReducers[i]==1){
+                       reducerFound=i;
                        break;
                    }
                }
-           }
-
-
-   }
-       return partitionFound;
+    }
+    return reducerFound;
 }
 void Shuffler::sendDataReducer(){
-
+   // EV<<"SONO QUIII"<<endl;
+    int reducerToSendData=-1;
     int remainedPartitions=numOfPartionsRemainedToElaborate();
     EV<<"Number of partitions remained to process "<<remainedPartitions<<"\n";
     // controllo se questo shuffler deve fare inviare una partizione oppure no
-    if (remainedPartitions>=(getIndex()+1)){
-        int counter=countPartitionsToElaborate(getIndex());
-        EV<<"Number of partition that I shuffler: "<<getIndex()<< " have to process is: "<<counter<<"\n";
-        for (int i=0;i<counter;i++){
-            //EV<<"sono lo shuffler "<<getIndex()<<"\n";
-// trovo il reducer a cui inviare i dati
-            int reducerFound=findReducerToSendData(getIndex(),i);
-            EV<<"reducer to send data is "<<reducerFound<<"\n ";
-            //EV<<"sono lo shuffler "<<getIndex()<<"\n";
-            // trovo la partizione che dovrà essere elaborata da quel reducer
-            int partitionsFound=findPartitionToElaborate(getIndex(),i+1);
-            //EV<<"partition to elaborate number"<<partitionsFound<<"\n";
-            // Trovo il nome della partizione che dovrà essere elaborata
-            std::string partitionsFoundString=partitionsNames.at(partitionsFound);
-            EV<<"The partition number found is: "<<partitionsFound<<" and the corresponding name is: "<<partitionsFoundString<<"\n ";
-            // Invio un messaggio al reducer corrispondente in modo che inizi ad elaborare la partizione e poi informo anche il coordinator a chi è stata associata la partizione
-            sendMessageReducer(reducerFound,partitionsFoundString);
-            sendMessageCoordinator(reducerFound,partitionsFoundString);
+    if (remainedPartitions>0){
 
+        for (int i=0;i<10;i++){
+            if (arrayOfPartitions[i]==-2){
+                int reducerFound=findReducer(reducerToSendData+1);
+                EV<<"reducer to send data is "<<reducerFound<<"\n ";
+                if (reducerFound==numOfReducers-1){
+                    reducerToSendData=-1;
+                }
+                else{
+                    reducerToSendData=reducerFound;
+                }
+
+                if (reducerFound>=0){
+                    std::string partitionsFoundString=partitionsNames.at(i);
+                    EV<<"The partition number found is: "<<i<<" and the corresponding name is: "<<partitionsFoundString<<"\n ";
+
+                    // Invio un messaggio al reducer corrispondente in modo che inizi ad elaborare la partizione e poi informo anche il coordinator a chi è stata associata la partizione
+                    sendMessageReducer(reducerFound,partitionsFoundString);
+                    sendMessageCoordinator(reducerFound,partitionsFoundString);
+                    EV<<"\n";
+                }
+
+            }
         }
 
-        EV<<"\n";
+
     }
-
-
 }
 
 void Shuffler::sendMessageReducer(int reducerNumber, std::string partitionToElaborate){
@@ -414,69 +361,7 @@ void Shuffler::riarrangeKey(ShuffleMessage *msg){
 
 }
 
-void Shuffler::ackMessageCoordinator(){
 
-}
-/*
-void Shuffler::aggregateFunction(KeysValueMessage *msg){
-        const int bufferLength = 255, numberKeyValue = 2;
-        int value=0;
-        char buffer[bufferLength];
-        char absolutePath[100];
-        FILE *filePointerWriting, *checkFileExistence;
-        sprintf(absolutePath, "C:\\Users\\spagn\\Desktop\\prova\\reduceFileOfKey%i.txt", msg->getKey());
-        checkFileExistence = fopen(absolutePath, "r");
-        if (checkFileExistence != NULL) {
-                printf("Il file esiste.\n");
-                fclose(checkFileExistence);
-                 filePointerWriting= fopen(absolutePath, "w");
-                 int index=0;
-                 while (fgets(buffer, bufferLength, filePointerWriting))
-                     {
-
-                         char *token = strtok(buffer, " ");
-                         // loop through the string to extract all other tokens
-                         int i = 0;
-                         while (i < numberKeyValue)
-                         {
-
-                             if (i == 1)
-                             {
-                                 value = strtol(token, NULL, 10);
-                                 while (msg->getValue(index)!=-1){
-                                     value = value + msg->getValue(index);
-                                 }
-
-
-                             }
-
-                             token = strtok(NULL, " ");
-                             i++;
-                         }
-                     }
-
-
-                     char keyValuePair[20];
-                     sprintf(keyValuePair, "%d %d", msg->getKey(), value);
-                     fprintf(filePointerWriting, "%s\n", keyValuePair);
-
-            }
-        else{
-            filePointerWriting= fopen(absolutePath, "w");
-            char keyValuePair[20];
-            int index=0;
-            int value=0;
-            while (msg->getValue(index)!=-1){
-                value = value + msg->getValue(index);
-            }
-            sprintf(keyValuePair, "%d %d", msg->getKey(), value);
-            fprintf(filePointerWriting, "%s\n", keyValuePair);
-
-        }
-
-        fclose(filePointerWriting);
-}
-*/
 
 int Shuffler::checkReducerAvailable(ShuffleMessage *msg){
     int available=0;
@@ -487,128 +372,5 @@ int Shuffler::checkReducerAvailable(ShuffleMessage *msg){
     }
 return 0;
 }
-int Shuffler::findClosestReducerAvailable(int reducerToSend,ShuffleMessage *msg){
-    int available=0;
-    for (int i=reducerToSend-1;i>=0;i--){
-       if (msg->getReducerAvailable(i)!=-1){
-           return i;
-       }
-    }
-    for (int i=numOfReducers;i>=reducerToSend;i--){
-           if (msg->getReducerAvailable(i)!=-1){
-               return i;
-           }
-        }
-return -1;
-}
-void Shuffler::resetArray(int *array){
 
-for (int i=0;i<100;i++){
- array[i]=-1;
-}
-
-
-}
-void Shuffler::prepareMessage(ShuffleMessage *msg){
-int lenght =sizeof(arrayKey) / sizeof(arrayKey[0]);
-int array[100] = {[0 ... 99] = -1};
-
-for (int k=0;k<lenght;k++){
-int index=0;
-    for (int i=0; i<lenght;i++){
-
-        if (arrayKey[i]!=-1 && arrayKey[i]==k){
-            //EV<<"sono qui dentro"<<"\n";
-            array[index]=arrayValue[i];
-            index++;
-        }
-
-    }
-
-if (array[0]!=-1){
-    sendMessage(array,k%numOfReducers,k,msg);
-
-}
-resetArray(array);
-}
-}
-
-void Shuffler::sendMessage(int *array, int reducerToSend, int key,ShuffleMessage *msg){
-    KeysValueMessage *msgToSend = new KeysValueMessage("keysValueMessage");
-    msgToSend->setKey(key);
-    msgToSend->setEntireArray(array);
-   if (msg->getReducerAvailable(reducerToSend)!=-1){
-       msgToSend->setReducerToSend(reducerToSend);
-
-     //  msgToSend -> setPartition(msg ->getPartitionToRead());
-       EV << "shuffler "<<getIndex()<<" is sending a message to reducer "<<msgToSend->getReducerToSend() <<" with values that have key: "<< msgToSend->getKey() << " \n";
-
-       for (int i=0;i<100;i++){
-           if (msgToSend->getValue(i)!=-1){
-               EV <<msgToSend->getValue(i)<<"\n";
-
-           }
-
-       }
-      send(msgToSend, "out",reducerToSend);
-   }
-   else{
-       int availableReducer=checkReducerAvailable(msg);
-       if (availableReducer){
-           int reducerFound=findClosestReducerAvailable(reducerToSend,msg);
-           if(reducerFound!=-1){
-               msgToSend->setReducerToSend(reducerFound);
-               send(msgToSend, "out", reducerFound);
-           }
-       }
-
-   }
-
-}
-void Shuffler::getDataFromFile(ShuffleMessage *msg)
-{
-    FILE *filePointer;
-    const int bufferLength = 255, numberKeyValue = 2;
-    char buffer[bufferLength];
-
-
-    filePointer = fopen(msg->getPartitionToRead(), "r+");
-    int indexKey = 0, indexValue = 0;
-    while (fgets(buffer, bufferLength, filePointer))
-    {
-
-        char *token = strtok(buffer, " ");
-        // loop through the string to extract all other tokens
-        int i = 0;
-        while (i < numberKeyValue)
-        {
-            if (i == 0)
-            {
-                arrayKey[indexKey] = strtol(token, NULL, 10);
-                EV << "key " << arrayKey[indexKey] << " ";
-                indexKey++;
-            }
-            if (i == 1)
-            {
-                int value = strtol(token, NULL, 10);
-
-
-                arrayValue[indexValue] = value;
-
-                EV << "value " << arrayValue[indexValue] << "\n";
-
-                indexValue++;
-            }
-
-            token = strtok(NULL, " ");
-
-            i++;
-        }
-    }
-    fclose(filePointer);
-
-    //writeOnFile(arrayKey, arrayValue, msg);
-
-    //ackMessageFunction(msg);
-}
 

@@ -29,24 +29,21 @@ private:
     simtime_t timeout;
     cMessage *timeoutEvent;
     cMessage *backOnlineMessage;
-    int n=0;
-    OperationMessage *msgArrived;
-    KeysValueMessage *keysValueMessage;
-    KeysValueMessage *keysValueMessageArray[5];
-    OperationMessage *messageSaved=NULL;
     cQueue messageQueue;
+    int probabilityOfFailure;
     //cMessage *backOnlineMessage;
     std::map<int, int> keyValuePair;
-
+    int numOfMessages;
 protected:
     // The following redefined virtual function holds the algorithm.
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
-    void printValuesAndKeyArrived();
     void writeOnFile(messageToReducer *keysValueMessage);
     void ackCoordinator();
     void scheduleTimeout();
     void sendMessage(messageToReducer *message);
+    void finish();
+    void emptyQueue();
 
 };
 
@@ -55,63 +52,42 @@ Define_Module(Reducer);
 
 void Reducer::initialize()
 {
+    numOfMessages=0;
+
+    WATCH(numOfMessages);
     timeout = 10.0;
     timeoutEvent = new cMessage("timeoutEvent");
     backOnlineMessage = new cMessage("backOnline");
-
+    probabilityOfFailure=par("probabilityOfFailure");
 }
 
-void Reducer::printValuesAndKeyArrived(){
-for (int i=0;i<100;i++){
-    if (keysValueMessage->getValue(i)!=-1){
-        EV<<keysValueMessage->getValue(i)<<" ";
-    }
 
-}
-EV<<"\n";
+void  Reducer::emptyQueue() {
+       while (!messageQueue.isEmpty()) {
+           messageToReducer *msg = dynamic_cast<messageToReducer*>(messageQueue.pop());
+           delete msg;  // Remember to delete the message to avoid memory leaks
+       }
+   }
+void Reducer::finish()
+{
+    EV << "Message sent or received by reducer "<<getIndex()<<" is " << numOfMessages << endl;
+    recordScalar("#sentReducer", numOfMessages);
 }
 void Reducer::handleMessage(cMessage *msg)
 {
-    /*
-    if (msg == timeoutEvent)
-        {
-            EV<<"un messaggio TimeoutEvent e' arrivato"<<"\n";
-            cancelEvent(timeoutEvent);
-            int random = rand() % 100;
-            EV << "il numero random generato e': "<<random <<"\n";
-            // il nodo decide se fallire o meno
-            if (random >0)
-            {
 
-                aggregateFunction(keysValueMessage);
-            }
-            else{
-                EV<<"reducer failed"<<"\n";
-            }
-
-        }
-    else{
-        keysValueMessage = dynamic_cast<KeysValueMessage *>(msg);
-       if (keysValueMessage!=nullptr){
-       EV<<"Mi e' arrivato un messaggio di tipo KeysValue message"<<"\n";
-       EV << "Message arrived i'm node " << getIndex() << " ,node to send:" << keysValueMessage->getReducerToSend() << " ,key:" << keysValueMessage->getKey() << "\n";
-       printValuesAndKeyArrived();
-       timeout = 1.0;
-       scheduleAt(simTime() + timeout, timeoutEvent);
-           }
-    }
-    */
     if (msg == timeoutEvent)
            {
             EV<<"Message of type timeout is arrived"<<"\n";
            // EV<<"un messaggio TimeoutEvent e' arrivato"<<"\n";
             cancelEvent(timeoutEvent);
             int random = rand() % 100;
-            //EV << "il numero random generato e': "<<random <<"\n";
+
             // il nodo decide se fallire o meno
-            if (random >20)
+            if (random >probabilityOfFailure)
             {
-                EV<<"I reducer: "<<getIndex()<<" i'm able to perform the function require, becuuse the number generated is: "<<random<<"\n";
+                numOfMessages+=1;
+                EV<<"I'm reducer: "<<getIndex()<<" and i'm able to perform the function require, because the number generated is: "<<random<<"\n";
                 ackCoordinator();
 
             }
@@ -119,12 +95,14 @@ void Reducer::handleMessage(cMessage *msg)
                 EV<<"Reducer failed"<<"\n";
                 timeout = 15.0;
                 scheduleAt(simTime() + timeout, backOnlineMessage);
+                emptyQueue() ;
             }
            }
     else{
         messageToReducer *msgReceived = dynamic_cast<messageToReducer *>(msg);
         if (msgReceived!=nullptr){
-            EV<<"Message of type Message To Reducer is arrived";
+            numOfMessages+=1;
+            EV<<"Message of type Message To Reducer is arrived"<<"\n";
         EV << "I'm reducer: " << getIndex() << " ,partition to work: " << msgReceived->getPartitionToReduce() << "\n";
               messageQueue.insert(msgReceived);
               timeout = 1.0;
@@ -136,6 +114,7 @@ void Reducer::handleMessage(cMessage *msg)
                backOnlineReducer *backOnlineMessage= new backOnlineReducer("backOnlineMessage");
                backOnlineMessage->setNodeNumber(getIndex());
                send(backOnlineMessage,"out");
+               numOfMessages+=1;
         }
     }
 }
@@ -146,7 +125,7 @@ void Reducer::scheduleTimeout() {
             // Programmazione del messaggio di timeout
            // simtime_t timeout = simTime() + 1.0;  // Esempio di timeout dopo 5 secondi
             scheduleAt(simTime() +timeout, timeoutEvent);
-            EV << "Timeout message programmed for " << timeout << endl;
+            EV << "Timeout message programmed for " <<endl;
         }
     }
 void Reducer::ackCoordinator(){
@@ -157,8 +136,9 @@ void Reducer::ackCoordinator(){
        if (message != nullptr) {
          sendMessage(message);
        }
+       numOfMessages+=1;
 
-           }
+       }
 }
 
 void Reducer::sendMessage(messageToReducer *message){
@@ -223,7 +203,6 @@ void Reducer::writeOnFile(messageToReducer *msg){
                  const int& key1 = pair.first;
                  const int& value1 = pair.second;
 
-                 // Utilizza key e value come necessario
                  EV<<"Key and value written after processing on partition: "<<absolutePath<<"\n";
                  EV<< "Key: " << key1 << ", value: " << value1 <<"\n";
                  sprintf(keyValuePairContainer, "%d %d", key1, value1);

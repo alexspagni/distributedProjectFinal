@@ -1,8 +1,8 @@
 version 3
-run General-0-20230719-01:06:09-8596
+run General-0-20230910-11:14:12-9720
 attr configname General
-attr datetime 20230719-01:06:09
-attr datetimef 20230719-010609
+attr datetime 20230910-11:14:12
+attr datetimef 20230910-111412
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
@@ -10,7 +10,7 @@ attr iterationvarsd ""
 attr iterationvarsf ""
 attr measurement ""
 attr network DistributedProject2
-attr processid 8596
+attr processid 9720
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -18,6 +18,21 @@ attr runnumber 0
 attr seedset 0
 config network DistributedProject2
 config debug-on-errors true
+config **.Cor.totalExecutionTime 1s
+config **.Cor.totalNumberOfMessagesCoordinator 0
+config record-eventlog true
+config **.Cor.numberOfWorkers 10
+config **.Cor.numberOfShuffler 1
+config **.Cor.numberOfReducers 10
+config DistributedProject2.numberOfWorkers 10
+config DistributedProject2.numberOfShuffler 1
+config DistributedProject2.numberOfReducer 10
+config **.Cor.keyValuePairs 2
+config **.Map.probabilityOfFailure 0
+config **.redux.probabilityOfFailure 0
+config **.Shuf.numOfShuffler 1
+config DistributedProject2.executionTimeShufflerReducer 100ms
+config DistributedProject2.executionTimeCoordinatorOtherComponent 1000ms
 
 par DistributedProject2.Cor.out[0].channel typename "\"ned.DelayChannel\""
 par DistributedProject2.Cor.out[0].channel disabled false
@@ -29,54 +44,6 @@ par DistributedProject2.Map[0].out.channel typename "\"ned.DelayChannel\""
 par DistributedProject2.Map[0].out.channel disabled false
 attr mutable ""
 par DistributedProject2.Map[0].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.redux[0].out.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.redux[0].out.channel disabled false
-attr mutable ""
-par DistributedProject2.redux[0].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Cor.outShuf[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Cor.outShuf[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Cor.outShuf[0].channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[0].out[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[0].out[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[0].out[0].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[0].out[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[0].out[1].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[0].out[1].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[0].out[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[0].out[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[0].out[2].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[0].out[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[0].out[3].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[0].out[3].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[0].out[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[0].out[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[0].out[4].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[0].outCoordinator.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[0].outCoordinator.channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[0].outCoordinator.channel delay 0.01s
 attr mutable ""
 attr unit s
 par DistributedProject2.Cor.out[1].channel typename "\"ned.DelayChannel\""
@@ -91,54 +58,6 @@ attr mutable ""
 par DistributedProject2.Map[1].out.channel delay 1s
 attr mutable ""
 attr unit s
-par DistributedProject2.redux[1].out.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.redux[1].out.channel disabled false
-attr mutable ""
-par DistributedProject2.redux[1].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Cor.outShuf[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Cor.outShuf[1].channel disabled false
-attr mutable ""
-par DistributedProject2.Cor.outShuf[1].channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[1].out[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[1].out[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[1].out[0].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[1].out[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[1].out[1].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[1].out[1].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[1].out[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[1].out[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[1].out[2].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[1].out[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[1].out[3].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[1].out[3].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[1].out[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[1].out[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[1].out[4].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[1].outCoordinator.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[1].outCoordinator.channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[1].outCoordinator.channel delay 0.01s
-attr mutable ""
-attr unit s
 par DistributedProject2.Cor.out[2].channel typename "\"ned.DelayChannel\""
 par DistributedProject2.Cor.out[2].channel disabled false
 attr mutable ""
@@ -149,54 +68,6 @@ par DistributedProject2.Map[2].out.channel typename "\"ned.DelayChannel\""
 par DistributedProject2.Map[2].out.channel disabled false
 attr mutable ""
 par DistributedProject2.Map[2].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.redux[2].out.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.redux[2].out.channel disabled false
-attr mutable ""
-par DistributedProject2.redux[2].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Cor.outShuf[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Cor.outShuf[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Cor.outShuf[2].channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[2].out[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[2].out[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[2].out[0].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[2].out[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[2].out[1].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[2].out[1].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[2].out[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[2].out[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[2].out[2].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[2].out[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[2].out[3].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[2].out[3].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[2].out[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[2].out[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[2].out[4].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[2].outCoordinator.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[2].outCoordinator.channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[2].outCoordinator.channel delay 0.01s
 attr mutable ""
 attr unit s
 par DistributedProject2.Cor.out[3].channel typename "\"ned.DelayChannel\""
@@ -211,54 +82,6 @@ attr mutable ""
 par DistributedProject2.Map[3].out.channel delay 1s
 attr mutable ""
 attr unit s
-par DistributedProject2.redux[3].out.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.redux[3].out.channel disabled false
-attr mutable ""
-par DistributedProject2.redux[3].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Cor.outShuf[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Cor.outShuf[3].channel disabled false
-attr mutable ""
-par DistributedProject2.Cor.outShuf[3].channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[3].out[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[3].out[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[3].out[0].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[3].out[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[3].out[1].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[3].out[1].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[3].out[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[3].out[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[3].out[2].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[3].out[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[3].out[3].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[3].out[3].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[3].out[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[3].out[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[3].out[4].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[3].outCoordinator.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[3].outCoordinator.channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[3].outCoordinator.channel delay 0.01s
-attr mutable ""
-attr unit s
 par DistributedProject2.Cor.out[4].channel typename "\"ned.DelayChannel\""
 par DistributedProject2.Cor.out[4].channel disabled false
 attr mutable ""
@@ -269,54 +92,6 @@ par DistributedProject2.Map[4].out.channel typename "\"ned.DelayChannel\""
 par DistributedProject2.Map[4].out.channel disabled false
 attr mutable ""
 par DistributedProject2.Map[4].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.redux[4].out.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.redux[4].out.channel disabled false
-attr mutable ""
-par DistributedProject2.redux[4].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Cor.outShuf[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Cor.outShuf[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Cor.outShuf[4].channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[4].out[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[4].out[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[4].out[0].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[4].out[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[4].out[1].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[4].out[1].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[4].out[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[4].out[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[4].out[2].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[4].out[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[4].out[3].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[4].out[3].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[4].out[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[4].out[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[4].out[4].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[4].outCoordinator.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[4].outCoordinator.channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[4].outCoordinator.channel delay 0.01s
 attr mutable ""
 attr unit s
 par DistributedProject2.Cor.out[5].channel typename "\"ned.DelayChannel\""
@@ -331,54 +106,6 @@ attr mutable ""
 par DistributedProject2.Map[5].out.channel delay 1s
 attr mutable ""
 attr unit s
-par DistributedProject2.redux[5].out.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.redux[5].out.channel disabled false
-attr mutable ""
-par DistributedProject2.redux[5].out.channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Cor.outShuf[5].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Cor.outShuf[5].channel disabled false
-attr mutable ""
-par DistributedProject2.Cor.outShuf[5].channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[5].out[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[5].out[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[5].out[0].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[5].out[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[5].out[1].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[5].out[1].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[5].out[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[5].out[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[5].out[2].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[5].out[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[5].out[3].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[5].out[3].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[5].out[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[5].out[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[5].out[4].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[5].outCoordinator.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[5].outCoordinator.channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[5].outCoordinator.channel delay 0.01s
-attr mutable ""
-attr unit s
 par DistributedProject2.Cor.out[6].channel typename "\"ned.DelayChannel\""
 par DistributedProject2.Cor.out[6].channel disabled false
 attr mutable ""
@@ -391,106 +118,263 @@ attr mutable ""
 par DistributedProject2.Map[6].out.channel delay 1s
 attr mutable ""
 attr unit s
+par DistributedProject2.Cor.out[7].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Cor.out[7].channel disabled false
+attr mutable ""
+par DistributedProject2.Cor.out[7].channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Map[7].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Map[7].out.channel disabled false
+attr mutable ""
+par DistributedProject2.Map[7].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Cor.out[8].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Cor.out[8].channel disabled false
+attr mutable ""
+par DistributedProject2.Cor.out[8].channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Map[8].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Map[8].out.channel disabled false
+attr mutable ""
+par DistributedProject2.Map[8].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Cor.out[9].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Cor.out[9].channel disabled false
+attr mutable ""
+par DistributedProject2.Cor.out[9].channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Map[9].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Map[9].out.channel disabled false
+attr mutable ""
+par DistributedProject2.Map[9].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Cor.outShuf.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Cor.outShuf.channel disabled false
+attr mutable ""
+par DistributedProject2.Cor.outShuf.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.outCoordinator.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.outCoordinator.channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.outCoordinator.channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.redux[0].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[0].out.channel disabled false
+attr mutable ""
+par DistributedProject2.redux[0].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.redux[1].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[1].out.channel disabled false
+attr mutable ""
+par DistributedProject2.redux[1].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.redux[2].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[2].out.channel disabled false
+attr mutable ""
+par DistributedProject2.redux[2].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.redux[3].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[3].out.channel disabled false
+attr mutable ""
+par DistributedProject2.redux[3].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.redux[4].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[4].out.channel disabled false
+attr mutable ""
+par DistributedProject2.redux[4].out.channel delay 1s
+attr mutable ""
+attr unit s
+par DistributedProject2.redux[5].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[5].out.channel disabled false
+attr mutable ""
+par DistributedProject2.redux[5].out.channel delay 1s
+attr mutable ""
+attr unit s
 par DistributedProject2.redux[6].out.channel typename "\"ned.DelayChannel\""
 par DistributedProject2.redux[6].out.channel disabled false
 attr mutable ""
 par DistributedProject2.redux[6].out.channel delay 1s
 attr mutable ""
 attr unit s
-par DistributedProject2.Cor.outShuf[6].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Cor.outShuf[6].channel disabled false
+par DistributedProject2.redux[7].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[7].out.channel disabled false
 attr mutable ""
-par DistributedProject2.Cor.outShuf[6].channel delay 1s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[6].out[0].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[6].out[0].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[6].out[0].channel delay 0.01s
+par DistributedProject2.redux[7].out.channel delay 1s
 attr mutable ""
 attr unit s
-par DistributedProject2.Shuf[6].out[1].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[6].out[1].channel disabled false
+par DistributedProject2.redux[8].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[8].out.channel disabled false
 attr mutable ""
-par DistributedProject2.Shuf[6].out[1].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[6].out[2].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[6].out[2].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[6].out[2].channel delay 0.01s
+par DistributedProject2.redux[8].out.channel delay 1s
 attr mutable ""
 attr unit s
-par DistributedProject2.Shuf[6].out[3].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[6].out[3].channel disabled false
+par DistributedProject2.redux[9].out.channel typename "\"ned.DelayChannel\""
+par DistributedProject2.redux[9].out.channel disabled false
 attr mutable ""
-par DistributedProject2.Shuf[6].out[3].channel delay 0.01s
-attr mutable ""
-attr unit s
-par DistributedProject2.Shuf[6].out[4].channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[6].out[4].channel disabled false
-attr mutable ""
-par DistributedProject2.Shuf[6].out[4].channel delay 0.01s
+par DistributedProject2.redux[9].out.channel delay 1s
 attr mutable ""
 attr unit s
-par DistributedProject2.Shuf[6].outCoordinator.channel typename "\"ned.DelayChannel\""
-par DistributedProject2.Shuf[6].outCoordinator.channel disabled false
+par DistributedProject2.Shuf.out[0].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[0].channel disabled false
 attr mutable ""
-par DistributedProject2.Shuf[6].outCoordinator.channel delay 0.01s
+par DistributedProject2.Shuf.out[0].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[1].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[1].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[1].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[2].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[2].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[2].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[3].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[3].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[3].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[4].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[4].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[4].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[5].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[5].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[5].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[6].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[6].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[6].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[7].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[7].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[7].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[8].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[8].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[8].channel delay 0.1s
+attr mutable ""
+attr unit s
+par DistributedProject2.Shuf.out[9].channel typename "\"ned.DelayChannel\""
+par DistributedProject2.Shuf.out[9].channel disabled false
+attr mutable ""
+par DistributedProject2.Shuf.out[9].channel delay 0.1s
 attr mutable ""
 attr unit s
 par DistributedProject2.Map[0] typename "\"MapperNode\""
 par DistributedProject2.Map[0] n 7
+par DistributedProject2.Map[0] probabilityOfFailure 20
+scalar DistributedProject2.Map[0] #sent 2
 par DistributedProject2.Map[1] typename "\"MapperNode\""
 par DistributedProject2.Map[1] n 7
+par DistributedProject2.Map[1] probabilityOfFailure 20
+scalar DistributedProject2.Map[1] #sent 2
 par DistributedProject2.Map[2] typename "\"MapperNode\""
 par DistributedProject2.Map[2] n 7
+par DistributedProject2.Map[2] probabilityOfFailure 20
+scalar DistributedProject2.Map[2] #sent 1
 par DistributedProject2.Map[3] typename "\"MapperNode\""
 par DistributedProject2.Map[3] n 7
+par DistributedProject2.Map[3] probabilityOfFailure 20
+scalar DistributedProject2.Map[3] #sent 2
 par DistributedProject2.Map[4] typename "\"MapperNode\""
 par DistributedProject2.Map[4] n 7
+par DistributedProject2.Map[4] probabilityOfFailure 20
+scalar DistributedProject2.Map[4] #sent 2
 par DistributedProject2.Map[5] typename "\"MapperNode\""
 par DistributedProject2.Map[5] n 7
+par DistributedProject2.Map[5] probabilityOfFailure 20
+scalar DistributedProject2.Map[5] #sent 2
 par DistributedProject2.Map[6] typename "\"MapperNode\""
 par DistributedProject2.Map[6] n 7
+par DistributedProject2.Map[6] probabilityOfFailure 20
+scalar DistributedProject2.Map[6] #sent 2
+par DistributedProject2.Map[7] typename "\"MapperNode\""
+par DistributedProject2.Map[7] n 7
+par DistributedProject2.Map[7] probabilityOfFailure 20
+scalar DistributedProject2.Map[7] #sent 2
+par DistributedProject2.Map[8] typename "\"MapperNode\""
+par DistributedProject2.Map[8] n 7
+par DistributedProject2.Map[8] probabilityOfFailure 20
+scalar DistributedProject2.Map[8] #sent 2
+par DistributedProject2.Map[9] typename "\"MapperNode\""
+par DistributedProject2.Map[9] n 7
+par DistributedProject2.Map[9] probabilityOfFailure 20
+scalar DistributedProject2.Map[9] #sent 2
 par DistributedProject2.Cor typename "\"Coordinator\""
-par DistributedProject2.Cor n 7
-par DistributedProject2.Cor numberOfShuffler 5
-par DistributedProject2.Shuf[0] typename "\"Shuffler\""
-par DistributedProject2.Shuf[0] n 7
-par DistributedProject2.Shuf[0] numberOfShuffler 5
-par DistributedProject2.Shuf[1] typename "\"Shuffler\""
-par DistributedProject2.Shuf[1] n 7
-par DistributedProject2.Shuf[1] numberOfShuffler 5
-par DistributedProject2.Shuf[2] typename "\"Shuffler\""
-par DistributedProject2.Shuf[2] n 7
-par DistributedProject2.Shuf[2] numberOfShuffler 5
-par DistributedProject2.Shuf[3] typename "\"Shuffler\""
-par DistributedProject2.Shuf[3] n 7
-par DistributedProject2.Shuf[3] numberOfShuffler 5
-par DistributedProject2.Shuf[4] typename "\"Shuffler\""
-par DistributedProject2.Shuf[4] n 7
-par DistributedProject2.Shuf[4] numberOfShuffler 5
-par DistributedProject2.Shuf[5] typename "\"Shuffler\""
-par DistributedProject2.Shuf[5] n 7
-par DistributedProject2.Shuf[5] numberOfShuffler 5
-par DistributedProject2.Shuf[6] typename "\"Shuffler\""
-par DistributedProject2.Shuf[6] n 7
-par DistributedProject2.Shuf[6] numberOfShuffler 5
+par DistributedProject2.Cor numberOfShuffler 1
+par DistributedProject2.Cor numberOfReducers 10
+par DistributedProject2.Cor keyValuePairs 2
+par DistributedProject2.Cor totalExecutionTime 1s
+attr unit s
+par DistributedProject2.Cor totalNumberOfMessagesCoordinator 0
+par DistributedProject2.Cor numberOfWorkers 10
+scalar DistributedProject2.Cor #sentOrReceivedByCoordinator 22
+scalar DistributedProject2.Cor #totalExecutionTime 0
+par DistributedProject2.Shuf typename "\"Shuffler\""
+par DistributedProject2.Shuf numOfShuffler 1
+par DistributedProject2.Shuf numOfReducer 10
 par DistributedProject2.redux[0] typename "\"Reducer\""
-par DistributedProject2.redux[0] n 7
+par DistributedProject2.redux[0] probabilityOfFailure 20
+scalar DistributedProject2.redux[0] #sentReducer 0
 par DistributedProject2.redux[1] typename "\"Reducer\""
-par DistributedProject2.redux[1] n 7
+par DistributedProject2.redux[1] probabilityOfFailure 20
+scalar DistributedProject2.redux[1] #sentReducer 0
 par DistributedProject2.redux[2] typename "\"Reducer\""
-par DistributedProject2.redux[2] n 7
+par DistributedProject2.redux[2] probabilityOfFailure 20
+scalar DistributedProject2.redux[2] #sentReducer 0
 par DistributedProject2.redux[3] typename "\"Reducer\""
-par DistributedProject2.redux[3] n 7
+par DistributedProject2.redux[3] probabilityOfFailure 20
+scalar DistributedProject2.redux[3] #sentReducer 0
 par DistributedProject2.redux[4] typename "\"Reducer\""
-par DistributedProject2.redux[4] n 7
+par DistributedProject2.redux[4] probabilityOfFailure 20
+scalar DistributedProject2.redux[4] #sentReducer 0
 par DistributedProject2.redux[5] typename "\"Reducer\""
-par DistributedProject2.redux[5] n 7
+par DistributedProject2.redux[5] probabilityOfFailure 20
+scalar DistributedProject2.redux[5] #sentReducer 0
 par DistributedProject2.redux[6] typename "\"Reducer\""
-par DistributedProject2.redux[6] n 7
+par DistributedProject2.redux[6] probabilityOfFailure 20
+scalar DistributedProject2.redux[6] #sentReducer 0
+par DistributedProject2.redux[7] typename "\"Reducer\""
+par DistributedProject2.redux[7] probabilityOfFailure 20
+scalar DistributedProject2.redux[7] #sentReducer 0
+par DistributedProject2.redux[8] typename "\"Reducer\""
+par DistributedProject2.redux[8] probabilityOfFailure 20
+scalar DistributedProject2.redux[8] #sentReducer 0
+par DistributedProject2.redux[9] typename "\"Reducer\""
+par DistributedProject2.redux[9] probabilityOfFailure 20
+scalar DistributedProject2.redux[9] #sentReducer 0
 par DistributedProject2 typename "\"DistributedProject2\""
-par DistributedProject2 n 7
+par DistributedProject2 numberOfWorkers 10
+par DistributedProject2 numberOfShuffler 1
+par DistributedProject2 numberOfReducer 10
+par DistributedProject2 executionTimeShufflerReducer 100ms
+attr unit ms
+par DistributedProject2 executionTimeCoordinatorOtherComponent 1000ms
+attr unit ms
 

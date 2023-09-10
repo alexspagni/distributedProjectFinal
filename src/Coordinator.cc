@@ -34,6 +34,7 @@ private:
     int num_of_partitions;
     int length_absolute_path = 100;
     char** partitionLocations;
+    int numOfMessages;
 
 public:
     Coordinator() : cSimpleModule() {
@@ -48,18 +49,17 @@ public:
                 delete[] partitionLocations;
             }
         }
-    int numberOfReducers=5;
+    int numberOfReducers;
     std::vector<int> reducersPartitionAssociation={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1} ;
     std::vector<int> reducersPartitionAssociationTemp={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1} ;
-    std::vector<int> reducersActive ;
-    const int key_value_generated = 5;
+    std::vector<int> reducersActive;
+    int key_value_generated;
 
-    char operationToDo[20] = "key add 5";
+   // char operationToDo[20] = "key add 5";
     int *arrayNodes;
     int *failedNodes;
-
+    simtime_t totalExecutionTime;
     //char partitionLocations[num_of_partitions][length_absolute_path];
-    int indexForPartitionElaborated = -2;
     int *backOnlineNodes;
     char **operationsToDoArray;
     int globalIndexOfOperation=0;
@@ -77,7 +77,6 @@ protected:
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
     void createPartitions(char absolutePath[100]);
-    int checkLettersDrawn(char letterUsed[], char caracterDrawn);
     virtual void generateMessage(char partition[100], char operationToPerform[20], int nodeToSend);
     virtual void shufflerMessage(char partition[100], char operationToPerform[20], int nodeToSend);
     virtual void shufflerMessageModified(const char partition[100], char operationToPerform[20], int nodeToSend);
@@ -92,8 +91,6 @@ protected:
     void printPartitions();
     void printReducedPartitions();
     void printReducersActive();
-    void checkRemainingPartitions();
-    void printOnlineNodes();
     void nextOperation();
     void nextOperationReduce();
     void cleanPartitions();
@@ -109,6 +106,8 @@ protected:
     void resetReducerPartitions();
     bool allReducersDown();
     int countNumberOfOperations();
+    void finish();
+
 };
 
 // The module class needs to be registered with OMNeT++
@@ -116,12 +115,20 @@ Define_Module(Coordinator);
 
 void Coordinator::initialize()
 {
+    numOfMessages=0;
+    totalExecutionTime=0;
+    WATCH(totalExecutionTime);
+    WATCH(numOfMessages);
+
+
+
+
     int numberOfOperations=countNumberOfOperations();
     operationsToDoArray = new char*[numberOfOperations];
               for (int i = 0; i < numberOfOperations; i++) {
                   operationsToDoArray[i] = new char[20];
               }
-  //PROVA
+  ///// Read JSON file
 
     nlohmann::json json;
 
@@ -138,7 +145,7 @@ void Coordinator::initialize()
       // Extract number of partitions from the JSON structure
 
       int partitions = json["partitions"];
-      EV<<partitions<<"\n";
+     // EV<<partitions<<"\n";
       int numMap = json["map"].size();
       std::string Map[2][numMap];
       int i = 0;
@@ -150,14 +157,10 @@ void Coordinator::initialize()
           std::string op = map["operation"];
 
           const char* Operation = op.c_str();
-        // EV<<Operation<<"\n";
+
           std::string num = map["value"];
           const char* numOp = num.c_str();
-          //EV<<numOp<<"\n";
-          //aggiungi valori estratti a
-          //Map[0][i] = Operation;
-          //Map[1][i] = to_string(numOp);
-          //operationsToDoArray[i] = "Map ";
+
           char mapString[5]="map ";
           strcat(finalArray, mapString);
           strcat(finalArray, Operation);
@@ -165,9 +168,7 @@ void Coordinator::initialize()
           strcat(finalArray, numOp);
           //EV<<finalArray<<"\n";
           strcpy(operationsToDoArray[i],finalArray);
-        //  strcat(operationsToDoArray2[i],"\0");
-          //cout << "worker function " << MapId << " Map operation: " << Map[0][i] << " value: " << Map[1][i] << endl;
-        //  EV << operationsToDoArray2[i] << "\n";
+
          //
           i++;
       }
@@ -197,17 +198,22 @@ for (const auto& red2 : json["reduce"]) {
     strcpy(operationsToDoArray[i],finalArray3);
       i++;
   }
+/*
 for (int i=0;i<numberOfOperations;i++){
     EV<<operationsToDoArray[i]<<"\n";
 }
+*/
  ///////////////////
     num_of_partitions=partitions;
     partitionLocations = new char*[num_of_partitions];
            for (int i = 0; i < num_of_partitions; i++) {
                partitionLocations[i] = new char[length_absolute_path];
            }
-    numberNode = par("n");
+    numberNode = par("numberOfWorkers");
     numberOfShuffler=par("numberOfShuffler");
+    numberOfReducers=par("numberOfReducers");
+    key_value_generated=par("keyValuePairs");
+    EV<<numberNode<<" "<<numberOfShuffler<<" "<<numberOfReducers<<"\n";
     // failed nodes: serve per tenere traccia dei nodi che sono falliti
     //arrayNodes: serve per sapere quale partizioni sono state allocate e a quali nodi
     //backOnlineNodes: serve per capire quali nodi dopo essere falliti sono tornati online.
@@ -226,7 +232,7 @@ for (int i=0;i<numberOfOperations;i++){
     for (int i = 0; i < numberNode; i++)
     {
         failedNodes[i] = 1;// at first all the nodes are active
-        backOnlineNodes[i]=0;// at first any node is failed so no node is online.
+        backOnlineNodes[i]=0;// at first no node is failed so no node is back online.
         timesMessages[i]=-1;// inizialmente nessun messaggio è stato mandato e quindi nessun time clock registrato
         //nodeMessageSent[i]=0;
 
@@ -239,20 +245,14 @@ for (int i=0;i<numberOfOperations;i++){
        // nodeMessageSent[i]=-1;
     }
 
-  /*  for (int i = 0; i < num_of_partitions; i++)
-    {
-        EV << arrayNodes[i] << " ";
-    }
-*/
+
     for (int i = 0; i < num_of_partitions; i++)
     {
         strcpy(partitionLocations[i], " ");
     }
 
     char fileName[20] = "partition";
-    //char endOfTheName[26] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
-    //char charactersUsed[26];
-   // strncpy(charactersUsed, " ", sizeof(charactersUsed));
+
 
     // vado a creare le partizioni
     for (int i = 0; i < num_of_partitions; i++)
@@ -265,6 +265,7 @@ for (int i=0;i<numberOfOperations;i++){
 
         createPartitions(absolutePath);
     }
+    EV<<"PARTITIONS CREATED"<<"\n";
     for (int i=0;i<num_of_partitions;i++){
         EV<<partitionLocations[i]<<"\n";
     }
@@ -272,6 +273,7 @@ for (int i=0;i<numberOfOperations;i++){
     simtime_t currentTime = simTime();//acquisco il tempo corrente
 
     if (strcmp(operationsToDoArray[0], "reduce")!=0){
+        EV<<"SENDING DATA TO MAPPERS"<<"\n";
         for (int i = 0; i <numberNode; i++)
         {
                 if (i<num_of_partitions){
@@ -281,6 +283,7 @@ for (int i=0;i<numberOfOperations;i++){
                 //shufflerMessage(partitionLocations[i], operationsToDoArray[globalIndexOfOperation],nodeToSend);
                 EV<<"sending data  to the mapper :"<<nodeToSend<<"\n";
                 generateMessage(partitionLocations[i], operationsToDoArray[globalIndexOfOperation], nodeToSend);
+
             }
         }
     }
@@ -291,6 +294,7 @@ for (int i=0;i<numberOfOperations;i++){
             int shufflerToSend=i%numberOfShuffler;
             EV<<"No mapper operations, sending data to the shuffler "<<shufflerToSend<<"\n";
             shufflerMessage(partitionLocations[i], operationsToDoArray[globalIndexOfOperation],shufflerToSend);
+           // numOfMessages+=1;
             }
         reducersActive.clear();
         for (int i=0;i<numberOfReducers;i++){
@@ -305,6 +309,16 @@ for (int i=0;i<numberOfOperations;i++){
     timeoutEvent = new cMessage("timeoutEvent");
     scheduleAt(simTime() + timeout, timeoutEvent);
 }
+void Coordinator::finish()
+{
+
+    EV << "TotalMessages sent or received by the coordinator are: " << numOfMessages << endl;
+    EV<<"Total execution time is:  "<<totalExecutionTime<<endl;
+    recordScalar("#sentOrReceivedByCoordinator", numOfMessages);
+    recordScalar("#totalExecutionTime", totalExecutionTime);
+
+}
+
 
 void Coordinator::initializeArrayOfNamePartitions(){
            partitionsNames.insert(partitionsNames.begin(), "C:\\Users\\spagn\\Desktop\\prova\\reduceFileOfKeys0.txt");
@@ -317,6 +331,7 @@ void Coordinator::initializeArrayOfNamePartitions(){
            partitionsNames.insert(partitionsNames.begin()+7, "C:\\Users\\spagn\\Desktop\\prova\\reduceFileOfKeys7.txt");
            partitionsNames.insert(partitionsNames.begin()+8, "C:\\Users\\spagn\\Desktop\\prova\\reduceFileOfKeys8.txt");
            partitionsNames.insert(partitionsNames.begin()+9, "C:\\Users\\spagn\\Desktop\\prova\\reduceFileOfKeys9.txt");
+
 
           /* for (int i=0;i<10;i++){
                EV<<partitionsNames[i]<<" ";
@@ -419,7 +434,7 @@ int Coordinator::reasseamblePartitionsWhenNodesComeBack(int nodeNumber)
         if (arrayNodes[i] == nodeNumber)
         {
 
-           // indexForPartitionElaborated = i;
+
             return i;
             //   EV<< "\n";
         }
@@ -427,65 +442,7 @@ int Coordinator::reasseamblePartitionsWhenNodesComeBack(int nodeNumber)
 
     return -1;
 }
-//NON USATA
-void Coordinator::checkRemainingPartitions()
-{
-    bool remainingPartitions = false;
-    for (int i = indexForPartitionElaborated + 1; i < num_of_partitions; i++)
-    {
-        // EV<< i<< " ";
-        if (arrayNodes[i] != -1)
-        {
 
-            remainingPartitions = true;
-            //   EV<< "\n";
-        }
-    }
-
-    if (remainingPartitions == false)
-    {
-        indexForPartitionElaborated = -1;
-    }
-    EV << " " << remainingPartitions << " " << indexForPartitionElaborated << "\n";
-}
-/*
-int Coordinator::reasseamblePartitions()
-{
-    for (int i = indexForPartitionElaborated + 1; i < num_of_partitions; i++)
-    {
-        // EV<< i<< " ";
-        if (arrayNodes[i] != -1)
-        {
-
-            indexForPartitionElaborated = i;
-            return indexForPartitionElaborated;
-            //   EV<< "\n";
-        }
-    }
-
-    return -1;
-}
-void Coordinator::checkRemainingPartitions()
-{
-    bool remainingPartitions = false;
-    for (int i = indexForPartitionElaborated + 1; i < num_of_partitions; i++)
-    {
-        // EV<< i<< " ";
-        if (arrayNodes[i] != -1)
-        {
-
-            remainingPartitions = true;
-            //   EV<< "\n";
-        }
-    }
-
-    if (remainingPartitions == false)
-    {
-        indexForPartitionElaborated = -1;
-    }
-    EV << " " << remainingPartitions << " " << indexForPartitionElaborated << "\n";
-}
-*/
 // Controllo se ci sono ancora nodi "alive"
 int Coordinator::checkNodeAvailable()
 {
@@ -509,17 +466,17 @@ void Coordinator::printFailedNodes()
 }
 void Coordinator::printPartitions()
 {
-    EV<<"How the partitions are assigned at the beginnng"<<"\n";
+    EV<<"HOW THE PARTITIONS ARE ASSIGNED:"<<"\n";
     for (int i = 0; i < num_of_partitions; i++)
     {
-        EV << " partitions :" << i << " " << arrayNodes[i] << "\n";
+        EV << " partitions :" << i << "--> Mapper Assigned " << arrayNodes[i] << "\n";
     }
 }
 void Coordinator::printReducedPartitions()
 {
     for (int i = 0; i < 10; i++)
     {
-        EV << " reducer partitions :" << i << " " << reducersPartitionAssociation[i] << "\n";
+        EV << " reducer partitions :" << i << " Reducer Assigned " << reducersPartitionAssociation[i] << "\n";
     }
 }
 void Coordinator::printReducersActive()
@@ -527,13 +484,6 @@ void Coordinator::printReducersActive()
     for (int i = 0; i < numberOfReducers; i++)
     {
         EV << " reducer :" << i << " " << reducersActive[i] << "\n";
-    }
-}
-void Coordinator::printOnlineNodes()
-{
-    for (int i = 0; i < numberNode; i++)
-    {
-        EV << " online node :" << i << " " << backOnlineNodes[i] << "\n";
     }
 }
 void Coordinator::printMessageTimes()
@@ -621,12 +571,7 @@ void Coordinator::createFailedArray()
         }
 
     }
-   /* for (int i=0;i<numberNode;i++){
-        if (failedNodes[i]!=0){}
-        timesMessages[i]=-1;
-    }*/
-   // printMessageTimes();
-//executionMode=1;
+
 }
 
 void Coordinator::cleanPartitions(){
@@ -638,18 +583,34 @@ void Coordinator::cleanPartitions(){
 }
 void Coordinator::nextOperation(){
 cleanPartitions();
+if (num_of_partitions<numberNode){
+    for (int i = 0; i < num_of_partitions; i++)
+       {
+        if (failedNodes[i]!=0){
+            arrayNodes[i] =i;
+            timesMessages[i]=simTime();
+            generateMessage(partitionLocations[i], operationsToDoArray[globalIndexOfOperation], i);
+
+        }
+       }
+
+       timeoutEvent = new cMessage("timeoutEvent");
+       scheduleAt(simTime() + timeout, timeoutEvent);
+}
+else{
 for (int i = 0; i < numberNode; i++)
    {
     if (failedNodes[i]!=0){
         arrayNodes[i] =i;
         timesMessages[i]=simTime();
         generateMessage(partitionLocations[i], operationsToDoArray[globalIndexOfOperation], i);
+
     }
    }
 
    timeoutEvent = new cMessage("timeoutEvent");
    scheduleAt(simTime() + timeout, timeoutEvent);
-
+}
 }
 
 void Coordinator::nextOperationReduce(){
@@ -657,7 +618,9 @@ cleanPartitions();
 for (int i = 0; i < numberNode; i++)
    {
     if (failedNodes[i]!=0){
+        if(i<num_of_partitions){
         arrayNodes[i] =i;
+        }
         timesMessages[i]=simTime();
       //  generateMessage(partitionLocations[i], operationsToDoArray[globalIndexOfOperation], i);
     }
@@ -669,6 +632,7 @@ for (int i = 0; i < numberNode; i++)
 }
 void Coordinator::handleMessage(cMessage *msg)
 {
+    numOfMessages+=1;
     if (msg != timeoutEvent)
     {
         EV<<msg->getArrivalGate()<<"\n";
@@ -690,16 +654,19 @@ void Coordinator::handleMessage(cMessage *msg)
                 // quì va a trovare la prossima partizione su cui il nodo deve lavorare
                 int nextPartition = findNextPartition(msgArrived->getPartition());
                 // vado a settare nell'array che tiene traccia di tutte le partizione completate e assegnate la nuova partizione su cui il nodo deve lavorare
-                arrayNodes[nextPartition] = msgArrived->getNodeNumber();
-
                // scheduleAt(simTime() + timeout, timeoutEvent);
                 simtime_t currentTime = simTime();//acquisco il tempo corrente
                 // Se il nodo da cui mi è arrivato il messaggio deve lavorare su ulteriori partizioni
                 if (nextPartition != -1)
                 {
+                    //se effettivamente esiste una partizione rimanente da elaborare per questo nodo allora la assegno (arrayNodes) e aggiorno il tempo dell'ultimo messaggio inviato a quel nodo.
+                    arrayNodes[nextPartition] = msgArrived->getNodeNumber();
+
                     EV << "The number of the next partition assigned to mapper : "<<msgArrived->getNodeNumber()<<" is " << nextPartition << " and its name is "<<partitionLocations[nextPartition]<<"\n";
                     timesMessages[msgArrived->getNodeNumber()]=currentTime;
                     generateMessage(partitionLocations[nextPartition], operationsToDoArray[globalIndexOfOperation], msgArrived->getNodeNumber());
+
+                   //numOfMessages+=1;
                 }
 
                 else
@@ -721,9 +688,6 @@ void Coordinator::handleMessage(cMessage *msg)
                 //Trovo la prossima partizione
                 int actualPartition = actualPartitionFunction(msgArrived->getPartition());
                 arrayNodes[actualPartition] = -1; // vado a dire che questa partizione è stata completata con successo.
-                //scheduleAt(simTime() + timeout, timeoutEvent);
-                //if (indexForPartitionElaborated != -1)
-                //{
 
                 simtime_t currentTime = simTime();//acquisco il tempo corrente
                 // dato che alcuni nodi sono falliti le partizioni non possono essere più assegnate a multipli del indice del nodo, e quindi devo trovare un altro modo per assegnarle
@@ -734,7 +698,9 @@ void Coordinator::handleMessage(cMessage *msg)
                     EV << "The number of the next partition assigned to mapper : "<<msgArrived->getNodeNumber() << " is " << partition << " and its name is "<<partitionLocations[partition]<<"\n";
                     arrayNodes[partition] = msgArrived->getNodeNumber();
                     generateMessage(partitionLocations[partition], operationsToDoArray[globalIndexOfOperation], msgArrived->getNodeNumber());
-                    //nodeMessageSent[indexForPartitionElaborated]=msgArrived->getNodeNumber();
+
+                   // numOfMessages+=1;
+
                 }
                 else
                 {
@@ -749,20 +715,20 @@ void Coordinator::handleMessage(cMessage *msg)
         }
         backOnline *newMessageArrived = dynamic_cast<backOnline *>(msg);
 
-        if (newMessageArrived != nullptr && strcmp(operationsToDoArray[globalIndexOfOperation], "reduce")!=0)// siamo nella situazione il cui uno dei nodi che sono falliti, sono tornati online.
+        if (newMessageArrived != nullptr && strcmp(operationsToDoArray[globalIndexOfOperation], "reduce")!=0)// siamo nella situazione in cui alcuni dei nodi sono falliti e sono tornati online.
         {
 
             executionMode=1;
             backOnline *backOnlineMessage = check_and_cast<backOnline *>(msg);
             EV<<"I'm the coordinator and i received a Back Online message from " << backOnlineMessage->getNodeNumber()<<"\n ";
-          //  EV << "back onlineMessage from: " << backOnlineMessage->getNodeNumber()<<"\n ";
+
             int nodeNumber=backOnlineMessage->getNodeNumber();
-           // backOnlineNodes[nodeNumber]=1;
+
             //Dato che il nodo è tornato online devo andare a dirlo anche all'array che tiene traccia dei nodi falliti.
             failedNodes[nodeNumber]=1;
             printFailedNodes();
             printMessageTimes();
-         //   scheduleAt(simTime() + timeout, timeoutEvent);
+
             simtime_t currentTime = simTime();//acquisco il tempo corrente
             // Vado a cercare l'ultima partizione che era stata assegnata al nodo.
            int partition = reasseamblePartitionsWhenNodesComeBack(backOnlineMessage->getNodeNumber());
@@ -777,14 +743,16 @@ void Coordinator::handleMessage(cMessage *msg)
                 EV << "This mapper has to perform a computation on the partition number " << partition << " that correspond to " << partitionLocations[partition] << "\n";
                 arrayNodes[partition] = backOnlineMessage->getNodeNumber();
                 generateMessage(partitionLocations[partition], operationsToDoArray[globalIndexOfOperation], backOnlineMessage->getNodeNumber());
-                //nodeMessageSent[indexForPartitionElaborated]=msgArrived->getNodeNumber();
+
+                //numOfMessages+=1;
+
 
             }
             else
             {
                 // Nel caso in cui non ci siano più partizione da elaborare allora il nodo rimarrà inattivo
                 timesMessages[backOnlineMessage->getNodeNumber()]=-1;
-                //EV << "no more partition to elaborate, your work is done";
+
             }
             printPartitions();
             printMessageTimes();
@@ -793,7 +761,7 @@ void Coordinator::handleMessage(cMessage *msg)
         if (msgArrived!=nullptr){
             EV<<"Message arrived from shuffler"<<"\n";
             EV<<"Partition: "<<msgArrived->getPartitionToReduce()<<" assigned to reducer: "<<msgArrived->getReducerSent()<<"\n";
-           // partitionReducerAssociation[msgArrived->getPartitionToReduce()] = msgArrived->getReducerSent();
+
             int partitionIndex=findPartitionReduced(msgArrived);
             reducersPartitionAssociation[partitionIndex]=msgArrived->getReducerSent();
             reducersActive[msgArrived->getReducerSent()]=-1;
@@ -818,9 +786,7 @@ void Coordinator::handleMessage(cMessage *msg)
     {
 
         EV << "A timeout event is arrived at the Coordinator"<<"\n";
-         //  EV<<"Execution mode"<<executionMode<<"\n";--> SCOMMENTA SE VUOI VEDERE IN CHE EXECUTION MODE SEI
-        // delete msg;
-        //executionMode=1;--> DOPO RICORDATI DI RIMETTERLO
+
         if (workDone())// controllo se tutte le partizione sono state elaborate
         {
             EV<<"All the partition have been processed correctly so perform next operation on the list"<<"\n";
@@ -841,13 +807,16 @@ void Coordinator::handleMessage(cMessage *msg)
                    EV<<"All reducers partitions has been elaborated"<<"\n";
                    printReducedPartitions();
                    printReducersActive();
+                   totalExecutionTime=simTime();
 
             }
             else{
                 scheduleAt(simTime() + timeout, timeoutEvent);
                 printReducedPartitions();
                 printReducersActive();
+
                 if (!allReducersDown()){
+                    //EV<<"sono qui"<<"\n";
                     findPartitionNotElaborated();
                     resetReducerPartitions();
                     printReducedPartitions();
@@ -855,13 +824,14 @@ void Coordinator::handleMessage(cMessage *msg)
                 }
                 else{
                     EV<<"all reducers down, WAIT"<<"\n";
+
                 }
 
-                //reducersActive.clear();
+
 
             }
         }
-        // fa il primo giro della reduce
+        // first turn of reduce operation
         else if (executionMode==2){
             EV<<"Performing the shuffling operation"<<"\n";
             for (int i = 0; i <num_of_partitions; i++)
@@ -869,6 +839,8 @@ void Coordinator::handleMessage(cMessage *msg)
                 int shufflerToSend=i%numberOfShuffler;
                 EV<<"Sending data to the shuffler: "<<shufflerToSend<<"\n";
                 shufflerMessage(partitionLocations[i], operationsToDoArray[globalIndexOfOperation],shufflerToSend);
+
+               // numOfMessages+=1;
             }
             reducersActive.clear();
                     for (int i=0;i<numberOfReducers;i++){
@@ -899,12 +871,11 @@ void Coordinator::handleMessage(cMessage *msg)
                         simtime_t currentTime = simTime();//acquisco il tempo corrente
                         timesMessages[i]=currentTime;// Setto il tempo a cui al nodo viene inviato il messaggio
                         generateMessage(partitionLocations[partition], operationsToDoArray[globalIndexOfOperation], i);
+                        //numOfMessages+=1;
+
                         arrayNodes[partition] = i;// in questo modo vado a settare nell'array che tiene traccia delle partizioni assegnate e completate a quale nodo la partizione è stata assegnata
                     }
-                    else
-                    {
-                        //EV << "No more partitions need to be processed in this moment";
-                    }
+
                 }
             }
             printPartitions();
@@ -941,10 +912,10 @@ for (int i=0;i<10;i++){
 }
 void Coordinator::findPartitionNotElaborated(){
     int indexShuffler=0;
+
     for (int i=0;i<numberOfReducers;i++){
 
-    if (reducersActive[i]==-1){
-        //EV<<"sono qui"<<"\n";
+   //if (reducersActive[i]==-1){
         for (int j=0;j<10;j++){
             if (reducersPartitionAssociation[j]==i){
                 const char*name=partitionsNames[j].c_str();
@@ -955,7 +926,7 @@ void Coordinator::findPartitionNotElaborated(){
                 indexShuffler++;
             }
         }
-    }
+    //}
 }
 
 }
@@ -982,7 +953,7 @@ void Coordinator::generateMessage(char partition[100], char operationToDo[20], i
     msg->setOperationToDo(operationToDo);
     msg->setNodeToSend(nodeToSend);
     msg->setPartitionToRead(partition);
-
+    numOfMessages+=1;
    send(msg, "out", nodeToSend);
 }
 
@@ -1005,7 +976,9 @@ void Coordinator::shufflerMessage(char partition[100], char operationToDo[20], i
      msg->setPartitionElaborated(i, -2);
     }
     msg->setCreatePartition(true);
-    send(msg, "outShuf", nodeToSend);
+    numOfMessages+=1;
+    send(msg, "outShuf");
+   // send(msg, "outShuf", nodeToSend);
 
 
 }
@@ -1024,7 +997,7 @@ void Coordinator::shufflerMessageModified(const char partition[100], char operat
     // definisco la dimensione del messaggio che sto per inviare
     msg->setPartitionElaboratedArraySize(10);
        for (int i=0;i<10;i++){
-           if (  reducersPartitionAssociation[i]>=0){
+           if (reducersPartitionAssociation[i]>=0){
                msg->setPartitionElaborated(i, -2);
            }
            else{
@@ -1033,25 +1006,13 @@ void Coordinator::shufflerMessageModified(const char partition[100], char operat
 
        }
        msg->setCreatePartition(false);
-    send(msg, "outShuf", nodeToSend);
+       numOfMessages+=1;
+    send(msg, "outShuf");
+    //send(msg, "outShuf", nodeToSend);
 
 
 }
-int Coordinator::checkLettersDrawn(char letterUsed[], char caracterDrawn)
-{
-    int seen = 0;
-    for (int i = 0; i < 26; i++)
-    {
-        if (strcmp(&letterUsed[i], " ") != 0)
-        {
-            if (strcmp(&letterUsed[i], &caracterDrawn))
-            {
-                seen = 1;
-            }
-        }
-    }
-    return seen;
-}
+
 int  Coordinator::countNumberOfOperations(){
 int count=0;
 nlohmann::json json;
